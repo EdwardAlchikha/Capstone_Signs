@@ -29,7 +29,7 @@ class SignPredicter:
         rectangles = list(filter(lambda rect: (rect[2] > 25 and rect[3] > 25), rectangles))
         
         if len(rectangles) == 0:
-            return None
+            return None, 0
         
         rectangle_choice = min(rectangles, key=lambda rectangle: rectangle[1])
         
@@ -44,19 +44,21 @@ class SignPredicter:
         image = np.reshape(image, (32, 32, 1))
         image = np.asarray([image])
         
-        return self.model.predict_classes(image)
+        probabilities = self.model.predict_proba(image)[0].tolist()
+        guess_probability = max(probabilities)
+        guess = probabilities.index(guess_probability)
+        return (guess, guess_probability)
 
 
 sign_predicter = SignPredicter("./MODELS/working-357983-10epochs-100steps-100batch.h5")
-prediction = sign_predicter.predict(cv2.resize(cv2.imread("./real-stop-test.jpg"), (640, 480)))
+prediction, probability = sign_predicter.predict(cv2.resize(cv2.imread("./real-stop-test.jpg"), (640, 480)))
 
-if prediction == 0:
-    print("STOP")
-elif predicition == 1:
-    print("5")
-elif prediction == 2:
-    print("10")
-elif predicition == None:
-    print("No valid region for sign could be found.")  # != no sign, no sign not yet implemented
+if probability > 0.95:
+    if prediction == 0:
+        print("STOP: " + str(probability))
+    elif predicition == 1:
+        print("5: " + str(probability))
+    elif prediction == 2:
+        print("10 " + str(probability))
 else:
-    print("What did you do to make this happen?")
+    print("No sign found with certainty above 0.9.")  # != no sign, no sign not yet implemented
